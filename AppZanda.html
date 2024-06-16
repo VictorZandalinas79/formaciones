@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Data Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos para el modal */
+        .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(238, 231, 231, 0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    position: relative;
+    background-color: #1a202c; /* A darker gray background */
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #131414; /* A slate gray border */
+    width: 50%; /* Could be more or less, depending on screen size */
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
+.close {
+    color: #131415; /* Light gray for the close button */
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #d63031; /* Red for hover/focus to make it stand out more */
+    text-decoration: none;
+    cursor: pointer;
+}
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a202c;
+            color: #07e40b;
+        }
+        .videomarcador {
+            font-family: 'Merriweather', sans-serif;
+            background-color: #2d3748;
+            color: #48bb78;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .hidden {
+    display: none;
+}
+        .videomarcador input {
+            background-color: #2d3748;
+            color: #090a09;
+            border: none;
+            border-bottom: 2px solid #e9f2ec;
+            padding: 5px 10px;
+            margin: 0 10px;
+        }
+        .timer-controls button {
+            background-color: #c2e31d;
+            color: rgb(15, 5, 5);
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .timer-controls button:hover {
+            background-color: #e4eee8;
+        }
+        .status-button {
+            background-color: #2d3748;
+            color: #cbd5e0;
+            border: 1px solid #171519;
+            padding: 3px 5px;
+            cursor: pointer;
+        }
+        .status-button.active {
+            background-color: #0ae96e;
+            color: rgb(5, 4, 4);
+        }
+        .titular-row, .suplente-row {
+    padding: 0px; /* Elimina el padding vertical y horizontal */
+    font-size: 0.7rem; /* Reduce el tamaño de la fuente para un diseño más compacto */
+    line-height: 0.1; /* Disminuye el espaciado vertical dentro de las filas */
+    height: 5px; /* Establece una altura fija y menor para las filas */
+    white-space: nowrap; /* Evita que el contenido se envuelva a una nueva línea */
+    text-align: center; /* Asegura que el texto esté centrado horizontalmente */
+    background-color: inherit; /* Aplica el color de fondo heredado de las clases específicas */
+}
+
+.titular-row {
+    background-color: #3a473a; /* Color oscuro para las filas titular */
+}
+
+.suplente-row {
+    background-color: #bb6873; /* Color claro para las filas suplente */
+}
+
+        .counter-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px; // Asegúrate de que el botón sea lo suficientemente grande para ser fácilmente clickable
+    height: 10px;
+    background-color: #2d3748;
+    color: #cbd5e0;
+    border: 1px solid #52bb48;
+    cursor: pointer;
+    font-size: 1rem; // Ajusta según sea necesario
+}
+
+.counter-button:hover {
+    background-color: #4a5568; // Cambio de color en hover para feedback visual
+}
+
+        .bg-custom {
+            background-color: #2d3748;
+        }
+        table th, table td {
+    padding: 0px; /* Reduce al mínimo el espacio interior de las celdas */
+    font-size: 0.7rem; /* Reduce el tamaño de la fuente para un texto más pequeño aún */
+    line-height: 0.01; /* Ajusta la altura de la línea para reducir la altura de las filas */
+    text-align: center; /* Mantiene el texto centrado */
+    white-space: nowrap; /* Evita que el texto se pase a una nueva línea dentro de la celda */
+    height: 1.5rem; /* Ajusta la altura de las celdas */
+}
+
+table {
+    border-collapse: collapse; /* Elimina completamente el espacio entre celdas */
+    table-layout: fixed; /* Fija el layout de la tabla para tener un control más estricto sobre las dimensiones de las celdas */
+    width: 100%; /* Opcional: ajusta la anchura de la tabla al contenedor */
+}
+
+
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-4xl mx-auto bg-custom p-6 rounded-lg shadow-lg">
+        <button id="toggleButton" class="bg-blue-500 text-white p-2 rounded w-full sm:w-auto">Datos del Partido</button>
+            <div id="matchData" class="hidden">
+            <div class="videomarcador">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+                        <div>
+                            <div class="font-bold text-lg">Datos partido</div>
+                            <div class="flex space-x-4">
+                                <div>
+                                    <input type="text" class="text-lg" placeholder="Local">
+                                    <input type="text" class="text-lg" placeholder="Visitante">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+                            <div>
+                                <div class="text-lg">Fecha:</div>
+                                <input type="date" class="text-lg">
+                            </div>
+                            <div>
+                                <div class="text-lg">Hora:</div>
+                                <input type="time" class="text-lg">
+                            </div>
+                            <div>
+                                <div class="text-lg">Jornada:</div>
+                                <input type="text" class="text-lg" placeholder="Jornada">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            </div>
+            <div id="generalTimer" class="text-6xl font-bold mb-2">00:00:000</div>
+            <div class="timer-controls">
+                <button id="startButton">▶️</button>
+                <button id="stopButton">⏹️</button>
+                <button id="resetButton">🔄</button>
+                <div class="part-selector mt-2">
+                    <select id="partIndicator" class="text-2xl font-semibold bg-custom text-white p-2 rounded-lg">
+                        <option value="1">1ª parte</option>
+                        <option value="2">2ª parte</option>
+                        <option value="3">Prórroga</option>
+                    </select>
+                    <span id="titularCount" class="text-xl font-semibold text-white ml-4">Titulares: 0</span> <!-- Contador de titulares -->
+                </div>
+                
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-custom border border-gray-700">
+            <thead>
+                <tr>
+                    <th class="py-2 px-2 border-b border-gray-700">Nº</th>
+                    <th class="py-2 px-2 border-b border-gray-700">Jug</th>
+                    <th class="py-2 px-2 border-b border-gray-700">Pos</th>
+                    <th class="py-2 px-2 border-b border-gray-700">Minutos</th>
+                    <th class="py-2 px-2 border-b border-gray-700">Tit</th>
+                    <th class="py-2 px-2 border-b border-gray-700">GF</th>
+                    <th class="py-2 px-2 border-b border-gray-700">GC</th>
+                    <th class="py-2 px-2 border-b border-gray-700">AS</th>
+                    <th class="py-2 px-2 border-b border-gray-700">TA</th>
+                    <th class="py-2 px-2 border-b border-gray-700">TR</th>
+                    <th class="py-2 px-2 border-b border-gray-700">Elim.</th>
+                </tr>
+            </thead>
+            <tbody id="playerTable">
+                <!-- Players will be added here dynamically -->
+            </tbody>
+        </table>
+        <div class="mt-4 flex space-x-4">
+            <input type="text" id="newPlayerName" class="border p-2 bg-custom text-white" placeholder="Jugador">
+            <input type="text" id="newPlayerDorsal" class="border p-2 bg-custom text-white" placeholder="Dorsal">
+            <select id="newPlayerPosition" class="border p-2 bg-custom text-white">
+                <option value="PO">PO</option>
+                <option value="LD">LD</option>
+                <option value="LI">LI</option>
+                <option value="CD">CD</option>
+                <option value="CI">CI</option>
+                <option value="CT">CT</option>
+                <option value="CAD">CAD</option>
+                <option value="CAI">CAI</option>
+                <option value="MCD">MCD</option>
+                <option value="MC">MC</option>
+                <option value="MP">MP</option>
+                <option value="ID">ID</option>
+                <option value="II">II</option>
+                <option value="ED">ED</option>
+                <option value="EI">EI</option>
+                <option value="DC">DC</option>
+            </select>
+            <button id="addPlayerButton" class="bg-blue-500 text-white p-2">Agregar Jugador</button>
+        </div>
+        <div class="mt-4 flex space-x-4">
+            <input type="text" id="newColumnName" class="border p-2 bg-custom text-white" placeholder="Nombre de la columna">
+            <button id="addColumnButton" class="bg-green-500 text-white p-2">Añadir Columna</button>
+        </div>
+        <div class="mt-4 flex space-x-4">
+            <button id="exportButton" class="bg-green-500 text-white p-2">Exportar datos</button>
+            <button id="importButton" class="bg-orange-500 text-white p-2">Importar Equipo</button>
+            <input type="file" id="importFileInput" accept=".csv" style="display:none;">
+            <button id="saveButton" class="bg-green-500 text-white p-2">Guardar Equipo</button>
+            <input type="file" id="importFileInput" accept=".csv" style="display:none;">
+            <button id="clearDataButton" class="bg-red-500 text-white p-2">Limpiar Datos</button>
+
+    <!-- El Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Ingrese los datos del partido</h2>
+            <form>
+                <label for="teamLocal">Equipo Local:</label>
+                <input type="text" id="teamLocal" name="teamLocal"><br><br>
+                <label for="teamVisitor">Equipo Visitante:</label>
+                <input type="text" id="teamVisitor" name="teamVisitor"><br><br>
+                <label for="matchDate">Fecha:</label>
+                <input type="date" id="matchDate" name="matchDate"><br><br>
+                <label for="matchTime">Hora:</label>
+                <input type="time" id="matchTime" name="matchTime"><br><br>
+                <label for="matchRound">Jornada:</label>
+                <input type="text" id="matchRound" name="matchRound"><br><br>
+                <button type="submit">Guardar Datos</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="emailModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-custom p-6 rounded-lg shadow-lg">
+            <div class="mb-4">
+                <label for="email" class="block text-gray-300">Email: (para enviar confirmación de informe acabado)</label>
+                <input type="email" id="email" class="border p-2 w-full bg-custom text-white" placeholder="Email">
+            </div>
+            <div class="mb-4">
+                <label for="googleAccount" class="block text-gray-300">Elije cuenta google para sincronizar con Google Sheet</label>
+                <input type="text" id="googleAccount" class="border p-2 w-full bg-custom text-white" placeholder="Cuenta Google">
+            </div>
+            <button id="sendButton" class="bg-green-500 text-white p-2 w-full">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        let generalTimer;
+        let isRunning = false;
+        let generalTime = 0;
+        const playerTimers = [];
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                generalTimer = setInterval(() => {
+                    generalTime += 10;
+                    document.getElementById('generalTimer').textContent = new Date(generalTime).toISOString().substr(14, 9);
+                    playerTimers.forEach((player, index) => {
+                        const statusButton = document.querySelectorAll('.status-button')[index];
+                        if (statusButton.classList.contains('active')) {
+                            player.time += 10;
+                            document.querySelectorAll('.player-timer')[index].textContent = new Date(player.time).toISOString().substr(14, 9);
+                        }
+                    });
+                }, 10);
+            }
+        });
+
+        document.getElementById('stopButton').addEventListener('click', () => {
+            clearInterval(generalTimer);
+            isRunning = false;
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            clearInterval(generalTimer);
+            isRunning = false;
+            generalTime = 0;
+            document.getElementById('generalTimer').textContent = '00:00:000';
+        });
+
+        function toggleStatus(button) {
+            if (button.classList.contains('active')) {
+                button.classList.remove('active');
+                button.textContent = 'Suplente';
+                button.closest('tr').classList.remove('titular-row');
+                button.closest('tr').classList.add('suplente-row');
+            } else {
+                button.classList.add('active');
+                button.textContent = 'Titular';
+                button.closest('tr').classList.remove('suplente-row');
+                button.closest('tr').classList.add('titular-row');
+            }
+            sortTable();
+        }
+
+        function sortTable() {
+            const table = document.getElementById('playerTable');
+            const rows = Array.from(table.rows);
+            rows.sort((a, b) => {
+                const aStatus = a.querySelector('.status-button').textContent;
+                const bStatus = b.querySelector('.status-button').textContent;
+                return aStatus === 'Titular' && bStatus === 'Suplente' ? -1 : aStatus === 'Suplente' && bStatus === 'Titular' ? 1 : 0;
+            });
+            rows.forEach(row => table.appendChild(row));
+        }
+
+        function updateCounter(button, increment) {
+    let currentValue = parseInt(button.textContent);
+    currentValue += increment;
+    button.textContent = currentValue;
+    updateButtonColors(); // Actualiza los colores cada vez que cambia el valor
+}
+function startDecrement(button) {
+    button.holdInterval = setInterval(() => updateCounter(button, -1), 200); // Intervalo más rápido para decremento continuo
+}
+
+function stopDecrement(button) {
+    clearInterval(button.holdInterval);
+}
+
+        document.getElementById('addPlayerButton').addEventListener('click', () => {
+            const playerName = document.getElementById('newPlayerName').value;
+            const playerDorsal = document.getElementById('newPlayerDorsal').value;
+            const playerPosition = document.getElementById('newPlayerPosition').value;
+            if (playerName && playerDorsal && playerPosition) {
+                const newRow = document.createElement('tr');
+                newRow.classList.add('titular-row');
+                newRow.innerHTML = `
+                    <td class="py-2 px-2 border-b border-gray-700">${playerDorsal}</td>
+                    <td class="py-2 px-2 border-b border-gray-700">${playerName}</td>
+                    <td class="py-2 px-2 border-b border-gray-700">${playerPosition}</td>
+                    <td class="py-2 px-2 border-b border-gray-700 player-timer">00:00:000</td>
+                    <td class="py-2 px-2 border-b border-gray-700">
+                        <button class="status-button active" onclick="toggleStatus(this)">Titular</button>
+                    </td>
+                    <td class="py-2 px-2 border-b border-gray-700">
+    <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+</td>
+<td class="py-2 px-2 border-b border-gray-700">
+    <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+</td>
+<td class="py-2 px-2 border-b border-gray-700">
+    <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+</td>
+<td class="py-2 px-2 border-b border-gray-700">
+    <button class="counter-button ta-button" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+</td>
+<td class="py-2 px-2 border-b border-gray-700">
+    <button class="counter-button tr-button" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+</td>
+<td class="py-2 px-2 border-b border-gray-700">
+    <button style="background-color: orange; color: white; padding: 2px;" onclick="removeRow(this)">-</button>
+</td>
+
+                `;
+                document.getElementById('playerTable').appendChild(newRow);
+                playerTimers.push({ time: 0, interval: null });
+                document.getElementById('newPlayerName').value = '';
+                document.getElementById('newPlayerDorsal').value = '';
+                document.getElementById('newPlayerPosition').value = '';
+            }
+        });
+
+        const positionPriority = {
+    'PO': 1, 'LD': 2, 'LI': 3, 'CD': 4, 'CI': 5, 'CT': 6, 
+    'CAD': 7, 'CAI': 8, 'MCD': 9, 'MC': 10, 'MP': 11, 
+    'ID': 12, 'II': 13, 'ED': 14, 'EI': 15, 'DC': 16
+};
+
+function sortTable() {
+    const table = document.getElementById('playerTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    // Ordenamos primero por Titular/Suplente y luego por posición
+    rows.sort((a, b) => {
+        const aStatus = a.querySelector('.status-button').textContent.includes('Titular') ? 0 : 1;
+        const bStatus = b.querySelector('.status-button').textContent.includes('Titular') ? 0 : 1;
+        const aPos = positionPriority[a.cells[2].textContent.trim()]; // Asegúrate que esta es la celda correcta para 'Demarcación'
+        const bPos = positionPriority[b.cells[2].textContent.trim()]; // Asegúrate que esta es la celda correcta para 'Demarcación'
+
+        if (aStatus !== bStatus) {
+            return aStatus - bStatus;
+        }
+        return aPos - bPos;
+    });
+
+    // Reinsertar las filas ordenadas
+    rows.forEach(row => table.appendChild(row));
+}
+
+document.querySelectorAll('.status-button').forEach(button => {
+    button.addEventListener('click', function() {
+        toggleStatus(this);
+        sortTable(); // Llama a sortTable después de cambiar el estado
+    });
+});
+
+document.getElementById('addPlayerButton').addEventListener('click', () => {
+    // Código para agregar jugador
+    sortTable(); // Llama a sortTable después de agregar un jugador
+});
+
+        function removeRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+        }
+
+        function startIncrement(button, increment) {
+            updateCounter(button, increment);
+            button.incrementInterval = setInterval(() => {
+                updateCounter(button, increment);
+            }, 1000);
+        }
+
+        function stopIncrement(button) {
+            clearInterval(button.incrementInterval);
+        }
+
+        document.getElementById('addColumnButton').addEventListener('click', () => {
+    const columnName = document.getElementById('newColumnName').value;
+    if (columnName) {
+        // Add header
+        const headerRow = document.querySelector('thead tr');
+        const newHeader = document.createElement('th');
+        newHeader.classList.add('py-2', 'px-2', 'border-b', 'border-gray-700');
+        newHeader.textContent = columnName;
+        headerRow.insertBefore(newHeader, headerRow.children[headerRow.children.length - 1]);
+
+        // Add cells to existing rows
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const newCell = document.createElement('td');
+            newCell.classList.add('py-2', 'px-2', 'border-b', 'border-gray-700');
+            newCell.innerHTML = `
+                <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+            `;
+            row.insertBefore(newCell, row.children[row.children.length - 1]);
+        });
+
+        document.getElementById('newColumnName').value = '';
+    }
+});
+
+document.querySelectorAll('th').forEach(th => {
+    th.addEventListener('dblclick', () => {
+        const newName = prompt('Nuevo nombre de la columna:', th.textContent);
+        if (newName) {
+            th.textContent = newName;
+        }
+    });
+});
+
+
+        document.getElementById('exportButton').addEventListener('click', () => {
+            const tableData = [];
+            const headers = Array.from(document.querySelectorAll('thead th')).map(th => th.textContent);
+            tableData.push(headers);
+
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const rowData = Array.from(row.children).map(td => td.textContent.trim());
+                tableData.push(rowData);
+            });
+
+            const csvContent = tableData.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'player_data.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        function updateCounter(button, increment) {
+    let currentValue = parseInt(button.textContent);
+    currentValue += increment;
+    button.textContent = currentValue;
+    updateButtonColors(); // Actualiza los colores cada vez que cambia el valor
+
+    // Register action in the log table
+    const row = button.closest('tr');
+    const dorsal = row.children[0].textContent;
+    const name = row.children[1].textContent;
+    const action = button.closest('td').previousElementSibling.textContent;
+
+    const logRow = document.createElement('tr');
+    logRow.innerHTML = `
+        <td class="py-2 px-2 border-b border-gray-700">${new Date(generalTime).toISOString().substr(14, 9)}</td>
+        <td class="py-2 px-2 border-b border-gray-700">${action}</td>
+        <td class="py-2 px-2 border-b border-gray-700">${dorsal}</td>
+        <td class="py-2 px-2 border-b border-gray-700">${name}</td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button style="background-color: red; color: white;" onclick="removeLogRow(this)">-</button>
+        </td>
+    `;
+    document.getElementById('actionLogTable').querySelector('tbody').appendChild(logRow);
+}
+
+function removeLogRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+ 
+
+        function openRivalWindow() {
+            document.getElementById('emailModal').classList.remove('hidden');
+        }
+
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const googleAccount = document.getElementById('googleAccount').value;
+            if (email && googleAccount) {
+                alert(`Datos enviados a ${email} y sincronizados con la cuenta de Google ${googleAccount}`);
+                document.getElementById('emailModal').classList.add('hidden');
+            } else {
+                alert('Por favor, complete todos los campos.');
+            }
+        });
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('emailModal');
+            if (event.target == modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('importButton').addEventListener('click', () => {
+    // Simula el clic en el input de archivo oculto
+    document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', handleFileSelect);
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const csvData = e.target.result;
+            processCSVData(csvData);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function processCSVData(csvData) {
+    const lines = csvData.split('\n');
+    // Omite la primera línea (asumiendo que contiene los títulos de las columnas)
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const [dorsal, name, position] = line.split(',');
+        if (dorsal && name && position) {
+            addPlayerToTable(dorsal.trim(), name.trim(), position.trim());
+        }
+    }
+    sortTable();
+}
+
+function addPlayerToTable(dorsal, name, position) {
+    const newRow = document.createElement('tr');
+    newRow.classList.add('titular-row');
+    newRow.innerHTML = `
+        <td class="py-2 px-2 border-b border-gray-700">${dorsal}</td>
+        <td class="py-2 px-2 border-b border-gray-700">${name}</td>
+        <td class="py-2 px-2 border-b border-gray-700">${position}</td>
+        <td class="py-2 px-2 border-b border-gray-700 player-timer">00:00:000</td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="status-button active" onclick="toggleStatus(this)">Titular</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="counter-button" style="background-color: black; color: white;" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="counter-button ta-button" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button class="counter-button tr-button" onclick="updateCounter(this, 1)" onmousedown="startDecrement(this)" onmouseup="stopDecrement(this)">0</button>
+        </td>
+        <td class="py-2 px-2 border-b border-gray-700">
+            <button style="background-color: orange; color: white; padding: 2px;" onclick="removeRow(this)">-</button>
+        </td>
+    `;
+    document.getElementById('playerTable').appendChild(newRow);
+    playerTimers.push({ time: 0, interval: null });
+}
+
+
+function updateButtonColors() {
+    const taButtons = document.querySelectorAll('.ta-button');
+    const trButtons = document.querySelectorAll('.tr-button');
+
+    taButtons.forEach((button, index) => {
+        const taValue = parseInt(button.textContent);
+        const trButton = trButtons[index];  // Asume que TA y TR están sincronizados por índice
+        const trValue = parseInt(trButton.textContent);
+
+        if (taValue > 1) {
+            button.style.backgroundColor = 'yellow';
+        } else {
+            button.style.backgroundColor = ''; // Restaura el color predeterminado si el valor es 1 o menos
+        }
+
+        if (trValue > 0) {
+            trButton.style.backgroundColor = 'red';
+        } else {
+            trButton.style.backgroundColor = ''; // Restaura el color predeterminado si el valor es 0
+        }
+
+        // Si ambos TA y TR son 0, ambos botones deberían tener fondo negro
+        if (taValue === 0 && trValue === 0) {
+            button.style.backgroundColor = 'black';
+            trButton.style.backgroundColor = 'black';
+        }
+    });
+}
+// Ejemplo de cómo llamar a la función después de actualizar los contadores
+function updateCounter(button, increment) {
+    let currentValue = parseInt(button.textContent);
+    currentValue += increment;
+    button.textContent = currentValue;
+    updateButtonColors(); // Actualiza los colores cada vez que cambia el valor
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM fully loaded and parsed");
+    updateTitularCount(); // Llama esta función al cargar para contar los titulares iniciales
+});
+
+function updateTitularCount() {
+    // Cuenta solo los botones activos que también tienen el texto 'Titular'
+    const titularButtons = document.querySelectorAll('.status-button.active');
+    console.log(`Total active buttons found: ${titularButtons.length}`); // Depuración para verificar la cantidad de botones encontrados
+    let titularCount = 0;
+    titularButtons.forEach(button => {
+        console.log(`Button text: ${button.textContent}`); // Depuración para verificar el texto de cada botón
+        if (button.textContent.includes('Titular')) {
+            titularCount++;
+        }
+    });
+
+    const titularCountElement = document.getElementById('titularCount');
+    if (!titularCountElement) {
+        console.error("titularCountElement not found!");
+        return;
+    }
+    titularCountElement.textContent = `Titulares: ${titularCount}`;
+}
+
+
+function toggleStatus(button) {
+    button.classList.toggle('active'); // Cambia el estado activo
+    button.textContent = button.classList.contains('active') ? 'Titular' : 'Suplente';
+    console.log(`Button toggled. New state: ${button.textContent}`); // Depuración para verificar el cambio de estado
+    updateTitularCount(); // Actualiza el contador de titulares cada vez que el estado cambia
+    sortTable(); // Si tienes una función para ordenar la tabla, asegúrate de llamarla también
+}
+
+document.getElementById('saveButton').addEventListener('click', () => {
+    const teamName = prompt('Ingrese el nombre del equipo:');
+    if (teamName) {
+        const tableData = [];
+        const headers = ['Nº', 'Jug', 'Pos']; // Asegúrate de que coincidan con tus encabezados
+        tableData.push(headers);
+
+        const rows = document.querySelectorAll('#playerTable tr');
+        rows.forEach(row => {
+            const rowData = Array.from(row.children).slice(0, 3).map(td => td.textContent.trim()); // Solo toma las primeras tres columnas
+            tableData.push(rowData);
+        });
+
+        const csvContent = tableData.map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${teamName}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } else {
+        alert('Nombre del equipo es requerido para guardar el archivo.');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.getElementById('myModal');
+    var btn = document.getElementById('toggleButton');
+    var span = document.getElementsByClassName("close")[0];
+
+    // Cuando el usuario hace clic en el botón, abre el modal
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    // Cuando el usuario hace clic en <span> (x), cierra el modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // Cuando el usuario hace clic fuera del modal, ciérralo
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll("input[type='text'], input[type='date'], input[type='time']");
+    inputs.forEach(input => {
+        // Cargar los datos guardados cuando se carga la página
+        if (localStorage.getItem(input.id)) {
+            input.value = localStorage.getItem(input.id);
+        }
+        
+        // Guardar datos en localStorage cuando cambian
+        input.addEventListener('input', () => {
+            localStorage.setItem(input.id, input.value);
+        });
+    });
+
+    // Cargar datos guardados para otros elementos si es necesario
+    // Ejemplo para select
+    const select = document.getElementById('partIndicator');
+    if (localStorage.getItem('partIndicator')) {
+        select.value = localStorage.getItem('partIndicator');
+    }
+    select.addEventListener('change', () => {
+        localStorage.setItem('partIndicator', select.value);
+    });
+});
+
+document.getElementById('clearDataButton').addEventListener('click', function() {
+    // Limpiar localStorage
+    localStorage.clear();
+
+    // Limpiar todos los campos del formulario
+    const inputs = document.querySelectorAll("input[type='text'], input[type='date'], input[type='time'], select");
+    inputs.forEach(input => {
+        input.value = ''; // Restablecer cada campo
+    });
+
+    // Restablecer select manualmente si es necesario
+    document.getElementById('partIndicator').value = '1'; // Ejemplo de valor por defecto
+
+    alert('Todos los datos han sido limpiados.');
+});
+
+function saveTableData() {
+    const table = document.getElementById('playerTable');
+    const data = [];
+    // Itera sobre cada fila de la tabla
+    Array.from(table.rows).forEach(row => {
+        const rowData = Array.from(row.cells).map(cell => {
+            const input = cell.querySelector('input');
+            const button = cell.querySelector('button');
+            if (input) {
+                return {type: 'input', value: input.value};
+            } else if (button) {
+                return {type: 'button', text: button.textContent, classList: Array.from(button.classList)};
+            } else {
+                return {type: 'text', text: cell.textContent};
+            }
+        });
+        data.push(rowData);
+    });
+
+    localStorage.setItem('playerData', JSON.stringify(data));
+}
+
+// Agrega la llamada a saveTableData cada vez que se modifique la tabla
+document.getElementById('addPlayerButton').addEventListener('click', function() {
+    // tu código existente para agregar jugador
+    // después de agregar un jugador
+    saveTableData(); // Llama a esta función para actualizar los datos guardados
+});
+
+
+function loadTableData() {
+    const data = localStorage.getItem('playerData');
+    if (data) {
+        const tableData = JSON.parse(data);
+        const table = document.getElementById('playerTable');
+        table.innerHTML = ''; // Limpia la tabla antes de cargar nuevos datos
+        tableData.forEach(rowData => {
+            const row = table.insertRow();
+            rowData.forEach(cellData => {
+                const cell = row.insertCell();
+                if (cellData.type === 'input') {
+                    const input = document.createElement('input');
+                    input.value = cellData.value;
+                    cell.appendChild(input);
+                } else if (cellData.type === 'button') {
+                    const button = document.createElement('button');
+                    button.textContent = cellData.text;
+                    button.classList.add(...cellData.classList);
+                    button.addEventListener('click', function() {
+                        toggleStatus(this); // Asegúrate de definir toggleStatus adecuadamente
+                    });
+                    cell.appendChild(button);
+                } else if (cellData.type === 'text') {
+                    cell.textContent = cellData.text;
+                }
+            });
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTableData(); // Asegúrate de llamar a esta función al cargar la página
+});
+
+
+
+    </script>
+</body>
+</html>
